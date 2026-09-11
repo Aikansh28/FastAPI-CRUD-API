@@ -60,3 +60,16 @@ def put_students(student_id : int, student_details : StudentPost, db: Session = 
     student.age = student_details.age
     db.commit()
     return student
+@app.patch("/students/{student_id}")
+def patch_students(student_id : int, student_details: StudentPatch ,db: Session = Depends(get_db)):
+    stmt = select(Student).where(Student.id == student_id)
+    result = db.execute(stmt)
+    student = result.scalar_one_or_none()
+    if student is None:
+       raise  HTTPException(status_code = 404 , detail = "student does not exist") 
+    if student_details.name is not None:
+       student.name = student_details.name 
+    if student_details.age is not None:
+       student.age = student_details.age
+    db.commit()
+    return student
