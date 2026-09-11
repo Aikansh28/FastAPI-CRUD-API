@@ -1,70 +1,45 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from fastapi import Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import select
-engine = create_engine("sqlite:///students.db")
+from fastapi    import FastAPI, HTTPException, Depends
+from pydantic   import BaseModel
+from sqlalchemy import create_engine,select
+from sqlalchemy.orm import DeclarativeBase,Mapped,mapped_column,Session,sessionmaker
+
 app = FastAPI()
-SessionLocal  = sessionmaker(bind = engine)
-db = SessionLocal()
-def get_db():
-      db = SessionLocal()
-      try:
-            yield db
-      finally:
-              db.close()
+
 class Base(DeclarativeBase):
       pass
 class Student(Base):
+      __tablename__ = "students"
       id : Mapped[int] = mapped_column(primary_key = True)
       name : Mapped[str] = mapped_column()
       age : Mapped[int] = mapped_column()
-      __tablename__ = "students"
-class StudentCreate(BaseModel):
-            name: str
-            age : int
+
+class StudentPost(BaseModel):
+      name : str
+      age : int
+class StudentPatch(BaseModel):
+      name : str | None = None
+      age  : int | None = None 
+
+class ResponseModel(BaseModel):
+      id : int
+      name: str
+      age : int 
+
+engine = create_engine("sqlite:///students.db")
 Base.metadata.create_all(engine)
-students = []
-@app.get("/students")
-def read_student(db: Session = Depends(get_db)):
-    stmt = select(Student)
+SessionLocal = sessionmaker(bind = engine)
+def get_db():
+    db = SessionLocal()
+    try:
+         yield db
+    finally:
+            db.close()
+@app.get("/students/{student_id}")
+def get_students(student_id : int , db: Session = Depends(get_db)):
+    stmt = select(Student).where(Student.id == student_id)
     result = db.execute(stmt)
-    students = result.scalars().all()
-    return students
+    student = result.scalar_one_or_none()
+    if student is None:
+       raise HTTPException(status_code =404 , detail = " student does not exist")
+    return student
 
-class Student_details(BaseModel):
-           id : int
-           name : str
-           age : int
-@app.delete("/students/{student_id}")
-def delete_student(student_id : int):
-     for student in students:
-          if student["id"] == student_id:
-             students.remove(student)
-             return student
-     raise HTTPException(status_code = 404, detail = "id not found")
-
-@app.put("/students/{student_id}")
-def update_students(student_id : int , student_details : Student_details):
-     for student in students:
-           if student["id"] == student_id:
-                student["name"] = student_details.name
-                student["age"] = student_details.age
-                return student
-     raise HTTPException(status_code = 404, detail = "id not found")
-class Student_patch(BaseModel):
-           name : str | None = None
-           age : int | None = None
-@app.patch("/students/{student_id}")
-def patch_student(student_id : int , student_details : Student_patch ):
-     for student in students:
-          if student["id"] == student_id:
-               if student_details.name is not None:
-                    student["name"] = student_details.name
-               if student_details.age is not None: 
-                    student["age"] = student_details.age
-          return student
-     raise HTTPException(status_code = 404, detail = "id not found")
