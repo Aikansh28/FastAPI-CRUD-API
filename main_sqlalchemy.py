@@ -49,3 +49,14 @@ def post_students(student_details: StudentPost, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(student)
     return student
+@app.put("/students/{student_id}")
+def put_students(student_id : int, student_details : StudentPost, db: Session = Depends(get_db)):
+    stmt = select(Student).where(Student.id == student_id)
+    result = db.execute(stmt)
+    student = result.scalar_one_or_none()
+    if student is None:
+       raise HTTPException(status_code = 404 ,detail = "student does not exist")
+    student.name = student_details.name
+    student.age = student_details.age
+    db.commit()
+    return student
