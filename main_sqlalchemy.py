@@ -42,4 +42,10 @@ def get_students(student_id : int , db: Session = Depends(get_db)):
     if student is None:
        raise HTTPException(status_code =404 , detail = " student does not exist")
     return student
-
+@app.post("/students" , response_model = ResponseModel)
+def post_students(student_details: StudentPost, db: Session = Depends(get_db)):
+    student = Student(name = student_details.name , age = student_details.age)
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+    return student
