@@ -73,3 +73,13 @@ def patch_students(student_id : int, student_details: StudentPatch ,db: Session 
        student.age = student_details.age
     db.commit()
     return student
+@app.delete("/students/{student_id}")
+def delete_students(student_id : int , db: Session = Depends(get_db)):
+    stmt = select(Student).where(Student.id == student_id)
+    result = db.execute(stmt)
+    student = result.scalar_one_or_none()
+    if student is None:
+       raise HTTPException(status_code= 404, detail = "student does not exist")
+    db.delete(student)
+    db.commit()
+    return student
