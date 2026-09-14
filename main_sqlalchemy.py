@@ -2,11 +2,9 @@ from fastapi    import FastAPI, HTTPException, Depends
 from pydantic   import BaseModel
 from sqlalchemy import create_engine,select
 from sqlalchemy.orm import DeclarativeBase,Mapped,mapped_column,Session,sessionmaker
-
+from database import Base,get_db
 app = FastAPI()
 
-class Base(DeclarativeBase):
-      pass
 class Student(Base):
       __tablename__ = "students"
       id : Mapped[int] = mapped_column(primary_key = True)
@@ -25,15 +23,6 @@ class ResponseModel(BaseModel):
       name: str
       age : int 
 
-engine = create_engine("sqlite:///students.db")
-Base.metadata.create_all(engine)
-SessionLocal = sessionmaker(bind = engine)
-def get_db():
-    db = SessionLocal()
-    try:
-         yield db
-    finally:
-            db.close()
 @app.get("/students/{student_id}")
 def get_students(student_id : int , db: Session = Depends(get_db)):
     stmt = select(Student).where(Student.id == student_id)
