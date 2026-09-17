@@ -1,7 +1,7 @@
 from fastapi    import FastAPI, HTTPException, Depends
 from pydantic   import BaseModel
-from sqlalchemy import create_engine,select
-from sqlalchemy.orm import DeclarativeBase,Mapped,mapped_column,Session,sessionmaker
+from sqlalchemy import select
+from sqlalchemy.orm import Mapped,mapped_column,Session
 from database import Base,get_db
 app = FastAPI()
 
